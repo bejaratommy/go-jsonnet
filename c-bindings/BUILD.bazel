@@ -1,0 +1,27 @@
+load("@rules_go//go:def.bzl", "go_binary", "go_library")
+
+go_library(
+    name = "c-bindings_lib",
+    srcs = [
+        "c-bindings.go",
+        "handles.go",
+        "internal.h",
+        "libjsonnet.cpp",
+    ],
+    cgo = True,
+    copts = ["-Wall"],  # keep
+    cxxopts = ["-std=c++11 -Wall"],
+    importpath = "github.com/google/go-jsonnet/c-bindings",
+    visibility = ["//visibility:private"],
+    deps = [
+        "//:go-jsonnet",
+        "//ast",
+        "//formatter",
+    ],
+)
+
+go_binary(
+    name = "c-bindings",
+    embed = [":c-bindings_lib"],
+    visibility = ["//visibility:public"],
+)

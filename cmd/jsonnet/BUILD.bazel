@@ -1,0 +1,19 @@
+load("@rules_go//go:def.bzl", "go_binary", "go_library")
+
+go_library(
+    name = "jsonnet_lib",
+    srcs = ["cmd.go"],
+    importpath = "github.com/google/go-jsonnet/cmd/jsonnet",
+    visibility = ["//visibility:private"],
+    deps = [
+        "//:go-jsonnet",
+        "//cmd/internal/cmd",
+        "@com_github_fatih_color//:color",
+    ],
+)
+
+go_binary(
+    name = "jsonnet",
+    embed = [":jsonnet_lib"],
+    visibility = ["//visibility:public"],
+)

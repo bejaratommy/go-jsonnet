@@ -1,0 +1,27 @@
+load("@rules_go//go:def.bzl", "go_library", "go_test")
+
+# keep: support old target name.
+alias(
+    name = "go_default_library",
+    actual = ":formatter",
+)
+
+go_library(
+    name = "formatter",
+    srcs = ["formatter.go"],
+    importpath = "github.com/google/go-jsonnet/formatter",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//ast",
+        "//internal/formatter",
+        "//internal/parser",
+    ],
+)
+
+go_test(
+    name = "formatter_test",
+    srcs = ["formatter_test.go"],
+    data = glob(["testdata/**"]),
+    embed = [":formatter"],
+    deps = ["//internal/testutils"],
+)

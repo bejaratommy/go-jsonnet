@@ -1,0 +1,29 @@
+load("@rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "linter",
+    srcs = ["linter.go"],
+    importpath = "github.com/google/go-jsonnet/linter",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//:go-jsonnet",
+        "//ast",
+        "//internal/errors",
+        "//internal/parser",
+        "//linter/internal/common",
+        "//linter/internal/traversal",
+        "//linter/internal/types",
+        "//linter/internal/variables",
+    ],
+)
+
+go_test(
+    name = "linter_test",
+    srcs = ["linter_test.go"],
+    data = glob(["testdata/**"]),
+    embed = [":linter"],
+    deps = [
+        "//:go-jsonnet",
+        "//internal/testutils",
+    ],
+)
