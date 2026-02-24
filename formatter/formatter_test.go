@@ -95,3 +95,95 @@ func TestFormatter(t *testing.T) {
 		})
 	}
 }
+
+func TestFormatNoImplicitPlus(t *testing.T) {
+	flag.Parse()
+
+	// Regression test for
+	// https://github.com/google/go-jsonnet/issues/809#issuecomment-3897434856
+	//
+	// (No support yet for custom formatter config/flags in the testdata/ driven tests)
+
+	// input evaluates to 9801
+	// $ go run ./cmd/jsonnet -e '{ f(x):: x * x } { a: 1 }.f(99)'
+	// 9801
+	//
+	// want evaluates to 9801
+	// $ go run ./cmd/jsonnet -e '({ f(x):: x * x } + { a: 1 }).f(99)'
+	// 9801
+	//
+	// Before fixing the bug, the formatter output is missing the necessary parentheses,
+	// (which must be injected; they're not in the input), without the parens the
+	// incorrectly formatted expression evaluates to:
+	// $ go run ./cmd/jsonnet -e '{ f(x):: x * x } + { a: 1 }.f(99)'
+	// RUNTIME ERROR: Field does not exist: f
+	//     <cmdline>:1:20-30    $
+	//     During evaluation
+	//
+	// exit status 1
+
+	tests := []struct {
+		name   string
+		input  string
+		golden string
+	}{
+		{
+			name:   "implicit-plus-apply",
+			input:  "{ f(x):: x * x } { a: 1 }.f(99)\n",
+			golden: "({ f(x):: x * x } + { a: 1 }).f(99)\n",
+		},
+		{
+			name:   "implicit-plus-index",
+			input:  "{ a: 1 } { b: 2 }.a\n",
+			golden: "({ a: 1 } + { b: 2 }).a\n",
+		},
+		{
+			name:   "implicit-plus",
+			input:  "{ a: 1 } { b: 2 }\n",
+			golden: "{ a: 1 } + { b: 2 }\n",
+		},
+		{
+			name:   "implicit-plus-three",
+			input:  "{ a: 1 } { b: 2 } { c: 3 }\n",
+			golden: "{ a: 1 } + { b: 2 } + { c: 3 }\n",
+		},
+		{
+			name:   "implicit-plus-left",
+			input:  "{ a: 1 } + { b: 2 } { c: 3 }\n",
+			golden: "{ a: 1 } + ({ b: 2 } + { c: 3 })\n",
+		},
+		{
+			name:   "implicit-plus-right",
+			input:  "{ a: 1 } { b: 2 } + { c: 3 }\n",
+			golden: "{ a: 1 } + { b: 2 } + { c: 3 }\n",
+		},
+		{
+			name:   "implicit-plus-unary",
+			input:  "+ 42 { b: 2 }\n",
+			golden: "+(42 + { b: 2 })\n",
+		},
+		{
+			name:   "implicit-plus-mul-right",
+			input:  "{ a: 1 } * { b: 2 } { c: 3 }\n",
+			golden: "{ a: 1 } * ({ b: 2 } + { c: 3 })\n",
+		},
+		{
+			name:   "implicit-plus-mul-left",
+			input:  "{ a: 1 } { b: 2 } * { c: 3 }\n",
+			golden: "({ a: 1 } + { b: 2 }) * { c: 3 }\n",
+		},
+	}
+
+	opts := DefaultOptions()
+	opts.UseImplicitPlus = false
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			out, _ := coalesceError(Format(test.name, test.input, opts))
+			t.Logf("formatter test\n%q\nformats to\n%q\n", test.input, out)
+			if diff, hasDiff := testutils.CompareWithGolden(out, []byte(test.golden)); hasDiff {
+				t.Error(fmt.Errorf("golden file for %v has diff:\n%v", test.name, diff))
+			}
+		})
+	}
+}
