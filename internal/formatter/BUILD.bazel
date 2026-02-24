@@ -23,6 +23,7 @@ go_library(
     visibility = ["//:__subpackages__"],
     deps = [
         "//ast",
+        "//internal/ast",
         "//internal/parser",
         "//internal/pass",
     ],
