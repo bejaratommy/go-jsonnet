@@ -1194,6 +1194,16 @@ var builtinIsDecimal = liftNumericToBoolean(func(f float64) bool {
 	return frac != 0
 })
 
+// IEEE-754 double precision floats can safely store integers in the range [-2**53+1, 2**53-1].
+// We restrict bitwise operations to arguments in this range, since operating on larger values is
+// likely to be a mistake.
+// https://jsonnet.org/ref/language.html#number
+// See also Javascript Number.{MIN_SAFE_INTEGER,MAX_SAFE_INTEGER}
+const (
+	maxSafeIntValue float64 = (1 << 53) - 1
+	minSafeIntValue float64 = -maxSafeIntValue
+)
+
 func liftBitwise(f func(int64, int64) int64, positiveRightArg bool) func(*interpreter, value, value) (value, error) {
 	return func(i *interpreter, xv, yv value) (value, error) {
 		x, err := i.getNumber(xv)
@@ -1204,12 +1214,12 @@ func liftBitwise(f func(int64, int64) int64, positiveRightArg bool) func(*interp
 		if err != nil {
 			return nil, err
 		}
-		if x.value < math.MinInt64 || x.value > math.MaxInt64 {
-			msg := fmt.Sprintf("Bitwise operator argument %v outside of range [%v, %v]", x.value, int64(math.MinInt64), int64(math.MaxInt64))
+		if x.value < minSafeIntValue || x.value > maxSafeIntValue {
+			msg := fmt.Sprintf("Bitwise operator argument %v outside of range [%v, %v]", x.value, int64(minSafeIntValue), int64(maxSafeIntValue))
 			return nil, makeRuntimeError(msg, i.getCurrentStackTrace())
 		}
-		if y.value < math.MinInt64 || y.value > math.MaxInt64 {
-			msg := fmt.Sprintf("Bitwise operator argument %v outside of range [%v, %v]", y.value, int64(math.MinInt64), int64(math.MaxInt64))
+		if y.value < minSafeIntValue || y.value > maxSafeIntValue {
+			msg := fmt.Sprintf("Bitwise operator argument %v outside of range [%v, %v]", y.value, int64(minSafeIntValue), int64(maxSafeIntValue))
 			return nil, makeRuntimeError(msg, i.getCurrentStackTrace())
 		}
 		if positiveRightArg && y.value < 0 {
