@@ -6,9 +6,9 @@ module(
 http_archive = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 
 # NB: update_cpp_jsonnet.sh looks for these.
-CPP_JSONNET_SHA256 = "0b4fb107f76adb757e8ef35a00a808f86bd57e01f9721184812d2a1fca89a740"
+CPP_JSONNET_SHA256 = "c170422f8fe719e607f101232361fe7601e6304336e02ae47f25d2aa963b84ae"
 
-CPP_JSONNET_GITHASH = "e4981ff1199f24fc6d3110311196aebfeca76eca"
+CPP_JSONNET_GITHASH = "833f18402b6b6a2da0b2fae75446a1e14b9116dd"
 
 CPP_JSONNET_RELEASE_VERSION = ""
 
