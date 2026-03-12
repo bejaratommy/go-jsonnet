@@ -38,8 +38,8 @@ jobs:
             SKIP_PYTHON_BINDINGS_TESTS: "0"
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-go@v5
+      - uses: actions/checkout@v6
+      - uses: actions/setup-go@v6
         with:
           go-version: ${{ matrix.goVersion }}
       - run: sudo apt install python3-dev python3-setuptools
@@ -56,8 +56,8 @@ jobs:
     name: bazel test
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/cache@v4
+      - uses: actions/checkout@v6
+      - uses: actions/cache@v5
         with:
           path: |
             ~/.cache/bazel
@@ -74,8 +74,8 @@ jobs:
       matrix:
         bazel_version: ["7.*", "8.*", "9.*"]
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/cache@v4
+      - uses: actions/checkout@v6
+      - uses: actions/cache@v5
         with:
           path: |
             ~/.cache/bazel
@@ -96,13 +96,10 @@ jobs:
     name: Check all
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - run: sudo apt install python3-dev python3-setuptools
       - run: pip install -U wheel
       - run: pip install -U pytest setuptools
-      # - uses: golangci/golangci-lint-action@v2
-      #   with:
-      #     version: v1.30.0
       - run: make all
       - name: Install goveralls
         run: |
@@ -118,7 +115,7 @@ jobs:
     name: Goreleaser
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: goreleaser/goreleaser-action@90a3faa9d0182683851fbfa97ca1a2cb983bfca3 # v6.2.1
+      - uses: actions/checkout@v6
+      - uses: goreleaser/goreleaser-action@ec59f474b9834571250b370d4735c50f8e2d1e29 # v7.0.0
         with:
           args: release --snapshot --skip=publish --clean
