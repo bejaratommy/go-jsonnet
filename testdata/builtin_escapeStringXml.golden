@@ -1,0 +1,12 @@
+[
+   "",
+   "&lt;tag&gt;",
+   "&lt;/tag&gt;",
+   "a &amp; b",
+   "say &quot;hello&quot;",
+   "it&apos;s fine",
+   "&lt;a href=&quot;url&quot;&gt;link &amp; text&lt;/a&gt;",
+   "no escaping needed",
+   "null",
+   "42"
+]

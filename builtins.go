@@ -1696,6 +1696,38 @@ func escapeStringJson(s string) string {
 	return res
 }
 
+func builtinEscapeStringXml(i *interpreter, v value) (value, error) {
+	s, err := valueToString(i, v)
+	if err != nil {
+		return nil, err
+	}
+
+	return makeValueString(escapeStringXML(s)), nil
+}
+
+// escapeStringXML escapes special XML/HTML characters in s.
+// This is the implementation underlying std.escapeStringXml.
+func escapeStringXML(s string) string {
+	var result strings.Builder
+	for _, ch := range s {
+		switch ch {
+		case '<':
+			result.WriteString("&lt;")
+		case '>':
+			result.WriteString("&gt;")
+		case '&':
+			result.WriteString("&amp;")
+		case '"':
+			result.WriteString("&quot;")
+		case '\'':
+			result.WriteString("&apos;")
+		default:
+			result.WriteRune(ch)
+		}
+	}
+	return result.String()
+}
+
 // tomlEncodeString encodes a string as quoted TOML string
 func tomlEncodeString(s string) string {
 	return unparseString(s)
@@ -2813,6 +2845,7 @@ var funcBuiltins = buildBuiltinMap([]builtin{
 	&unaryBuiltin{name: "length", function: builtinLength, params: ast.Identifiers{"x"}},
 	&unaryBuiltin{name: "toString", function: builtinToString, params: ast.Identifiers{"a"}},
 	&unaryBuiltin{name: "escapeStringJson", function: builtinEscapeStringJson, params: ast.Identifiers{"str_"}},
+	&unaryBuiltin{name: "escapeStringXml", function: builtinEscapeStringXml, params: ast.Identifiers{"str_"}},
 	&binaryBuiltin{name: "trace", function: builtinTrace, params: ast.Identifiers{"str", "rest"}},
 	&binaryBuiltin{name: "makeArray", function: builtinMakeArray, params: ast.Identifiers{"sz", "func"}},
 	&binaryBuiltin{name: "flatMap", function: builtinFlatMap, params: ast.Identifiers{"func", "arr"}},

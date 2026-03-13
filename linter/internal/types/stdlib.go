@@ -106,6 +106,7 @@ func prepareStdlib(g *typeGraph) {
 		"escapeStringDollars": g.newSimpleFuncType(stringType, "str_"),
 		"escapeStringJson":    g.newSimpleFuncType(stringType, "str_"),
 		"escapeStringPython":  g.newSimpleFuncType(stringType, "str"),
+		"escapeStringXml":     g.newSimpleFuncType(stringType, "str_"),
 
 		// Parsing
 
