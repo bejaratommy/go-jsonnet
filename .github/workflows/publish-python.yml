@@ -54,7 +54,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-22.04, macos-14, macos-latest]
+        os: [ubuntu-22.04, ubuntu-22.04-arm, macos-14, macos-latest]
         # Windows Wheel build doesn't work yet.
         # os: [windows-2022]
 
