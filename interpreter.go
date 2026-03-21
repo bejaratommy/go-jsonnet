@@ -674,10 +674,11 @@ func unparseNumber(v float64) string {
 		return fmt.Sprintf("%.0f", v)
 	}
 
-	// See "What Every Computer Scientist Should Know About Floating-Point Arithmetic"
-	// Theorem 15
-	// http://docs.oracle.com/cd/E19957-01/806-3568/ncg_goldberg.html
-	return fmt.Sprintf("%.17g", v)
+	// Use the shortest decimal representation that round-trips back to the
+	// same float64 value. This avoids spurious digits such as the trailing
+	// "...99997" that "%.17g" produces for values like 0.97.
+	// See https://github.com/google/go-jsonnet/issues/718
+	return strconv.FormatFloat(v, 'g', -1, 64)
 }
 
 // manifestJSON converts to standard JSON representation as in "encoding/json" package
