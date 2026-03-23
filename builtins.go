@@ -1733,11 +1733,9 @@ func tomlAddToPath(path []string, tail string) []string {
 	return result
 }
 
-const maxManifestDepth = 500
-
 // tomlRenderValue returns a rendered value as string, with proper indenting
 func tomlRenderValue(i *interpreter, val value, sindent string, indexedPath []string, inline bool, cindent string, depth int) (string, error) {
-	if depth > maxManifestDepth {
+	if depth <= 0 {
 		return "", i.Error("max manifest depth exceeded, possible infinite recursion")
 	}
 	switch v := val.(type) {
@@ -1781,7 +1779,7 @@ func tomlRenderValue(i *interpreter, val value, sindent string, indexedPath []st
 			}
 
 			res = res + newIndent
-			value, err := tomlRenderValue(i, thunkValue, sindent, childIndexedPath, true, "", depth+1)
+			value, err := tomlRenderValue(i, thunkValue, sindent, childIndexedPath, true, "", depth-1)
 			if err != nil {
 				return "", err
 			}
@@ -1812,7 +1810,7 @@ func tomlRenderValue(i *interpreter, val value, sindent string, indexedPath []st
 
 			childIndexedPath := tomlAddToPath(indexedPath, fieldName)
 
-			value, err := tomlRenderValue(i, fieldValue, sindent, childIndexedPath, true, "", depth+1)
+			value, err := tomlRenderValue(i, fieldValue, sindent, childIndexedPath, true, "", depth-1)
 			if err != nil {
 				return "", err
 			}
@@ -1831,7 +1829,7 @@ func tomlRenderValue(i *interpreter, val value, sindent string, indexedPath []st
 }
 
 func tomlRenderTableArray(i *interpreter, v *valueArray, sindent string, path []string, indexedPath []string, cindent string, depth int) (string, error) {
-	if depth > maxManifestDepth {
+	if depth <= 0 {
 		return "", i.Error("max manifest depth exceeded, possible infinite recursion")
 	}
 
@@ -1866,7 +1864,7 @@ func tomlRenderTableArray(i *interpreter, v *valueArray, sindent string, path []
 			childIndexedPath := tomlAddToPath(indexedPath, strconv.FormatInt(int64(j), 10))
 
 			// render the table and add it to result
-			table, err := tomlTableInternal(i, tv, sindent, path, childIndexedPath, cindent+sindent, depth+1)
+			table, err := tomlTableInternal(i, tv, sindent, path, childIndexedPath, cindent+sindent, depth-1)
 			if err != nil {
 				return "", err
 			}
@@ -1883,7 +1881,7 @@ func tomlRenderTableArray(i *interpreter, v *valueArray, sindent string, path []
 }
 
 func tomlRenderTable(i *interpreter, v *valueObject, sindent string, path []string, indexedPath []string, cindent string, depth int) (string, error) {
-	if depth > maxManifestDepth {
+	if depth <= 0 {
 		return "", i.Error("max manifest depth exceeded, possible infinite recursion")
 	}
 	res := cindent + "["
@@ -1898,7 +1896,7 @@ func tomlRenderTable(i *interpreter, v *valueObject, sindent string, path []stri
 		res = res + "\n"
 	}
 
-	table, err := tomlTableInternal(i, v, sindent, path, indexedPath, cindent+sindent, depth+1)
+	table, err := tomlTableInternal(i, v, sindent, path, indexedPath, cindent+sindent, depth-1)
 	if err != nil {
 		return "", err
 	}
@@ -1908,7 +1906,7 @@ func tomlRenderTable(i *interpreter, v *valueObject, sindent string, path []stri
 }
 
 func tomlTableInternal(i *interpreter, v *valueObject, sindent string, path []string, indexedPath []string, cindent string, depth int) (string, error) {
-	if depth > maxManifestDepth {
+	if depth <= 0 {
 		return "", i.Error("max manifest depth exceeded, possible infinite recursion")
 	}
 	resFields := []string{}
@@ -1937,13 +1935,13 @@ func tomlTableInternal(i *interpreter, v *valueObject, sindent string, path []st
 
 			switch fv := fieldValue.(type) {
 			case *valueObject:
-				section, err := tomlRenderTable(i, fv, sindent, childPath, childIndexedPath, cindent, depth+1)
+				section, err := tomlRenderTable(i, fv, sindent, childPath, childIndexedPath, cindent, depth-1)
 				if err != nil {
 					return "", err
 				}
 				resSections = append(resSections, section)
 			case *valueArray:
-				section, err := tomlRenderTableArray(i, fv, sindent, childPath, childIndexedPath, cindent, depth+1)
+				section, err := tomlRenderTableArray(i, fv, sindent, childPath, childIndexedPath, cindent, depth-1)
 				if err != nil {
 					return "", err
 				}
@@ -1954,7 +1952,7 @@ func tomlTableInternal(i *interpreter, v *valueObject, sindent string, path []st
 		} else {
 			// render as value and append to result fields
 
-			renderedValue, err := tomlRenderValue(i, fieldValue, sindent, childIndexedPath, false, "", depth+1)
+			renderedValue, err := tomlRenderValue(i, fieldValue, sindent, childIndexedPath, false, "", depth-1)
 			if err != nil {
 				return "", err
 			}
@@ -1982,7 +1980,7 @@ func builtinManifestTomlEx(i *interpreter, arguments []value) (value, error) {
 
 	switch v := val.(type) {
 	case *valueObject:
-		res, err := tomlTableInternal(i, v, sindent, []string{}, []string{}, "", 0)
+		res, err := tomlTableInternal(i, v, sindent, []string{}, []string{}, "", i.stack.limit)
 		if err != nil {
 			return nil, err
 		}
@@ -2022,7 +2020,7 @@ func builtinManifestJSONEx(i *interpreter, arguments []value) (value, error) {
 
 	var aux func(ov value, path []string, cindent string, depth int) (string, error)
 	aux = func(ov value, path []string, cindent string, depth int) (string, error) {
-		if depth > maxManifestDepth {
+		if depth <= 0 {
 			return "", i.Error("max manifest depth exceeded, possible infinite recursion")
 		}
 		if ov == nil {
@@ -2057,7 +2055,7 @@ func builtinManifestJSONEx(i *interpreter, arguments []value) (value, error) {
 				}
 
 				newPath := append(path, strconv.FormatInt(int64(aI), 10))
-				s, err := aux(cTv, newPath, newIndent, depth+1)
+				s, err := aux(cTv, newPath, newIndent, depth-1)
 				if err != nil {
 					return "", err
 				}
@@ -2085,7 +2083,7 @@ func builtinManifestJSONEx(i *interpreter, arguments []value) (value, error) {
 				}
 
 				newPath := append(path, fieldName)
-				mvs, err := aux(fieldValue, newPath, newIndent, depth+1)
+				mvs, err := aux(fieldValue, newPath, newIndent, depth-1)
 				if err != nil {
 					return "", err
 				}
@@ -2101,7 +2099,7 @@ func builtinManifestJSONEx(i *interpreter, arguments []value) (value, error) {
 		}
 	}
 
-	finalString, err := aux(val, path, "", 0)
+	finalString, err := aux(val, path, "", i.stack.limit)
 	if err != nil {
 		return nil, err
 	}
@@ -2191,7 +2189,7 @@ func builtinManifestYamlDoc(i *interpreter, arguments []value) (value, error) {
 
 	var aux func(ov value, buf *bytes.Buffer, cindent string, depth int) error
 	aux = func(ov value, buf *bytes.Buffer, cindent string, depth int) error {
-		if depth > maxManifestDepth {
+		if depth <= 0 {
 			return i.Error("max manifest depth exceeded, possible infinite recursion")
 		}
 		switch v := ov.(type) {
@@ -2251,7 +2249,7 @@ func builtinManifestYamlDoc(i *interpreter, arguments []value) (value, error) {
 					cindent = cindent + yamlIndent
 				}
 
-				if err := aux(thunkValue, buf, cindent, depth+1); err != nil {
+				if err := aux(thunkValue, buf, cindent, depth-1); err != nil {
 					return err
 				}
 				cindent = prevIndent
@@ -2301,7 +2299,7 @@ func builtinManifestYamlDoc(i *interpreter, arguments []value) (value, error) {
 				} else {
 					buf.WriteByte(' ')
 				}
-				if err := aux(fieldValue, buf, cindent, depth+1); err != nil {
+				if err := aux(fieldValue, buf, cindent, depth-1); err != nil {
 					return err
 				}
 				cindent = prevIndent
@@ -2310,7 +2308,7 @@ func builtinManifestYamlDoc(i *interpreter, arguments []value) (value, error) {
 		return nil
 	}
 
-	if err := aux(val, &buf, "", 0); err != nil {
+	if err := aux(val, &buf, "", i.stack.limit); err != nil {
 		return nil, err
 	}
 
