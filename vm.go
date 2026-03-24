@@ -178,7 +178,7 @@ const (
 )
 
 // version is the current gojsonnet's version
-const version = "v0.22.0-rc1"
+const version = "v0.22.0"
 
 func (vm *VM) buildConfiguredInterpreter() (*interpreter, error) {
 	return buildInterpreter(vm.ext, vm.nativeFuncs, vm.MaxStack, vm.importCache, vm.traceOut, vm.EvalHook)
