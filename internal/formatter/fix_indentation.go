@@ -235,7 +235,7 @@ func (c *FixIndentation) params(fodderL ast.Fodder, params []ast.Parameter,
 	if trailingComma {
 		c.column++
 	}
-	c.fillLast(fodderR, false, false, newIndent.lineUp, currIndent.lineUp)
+	c.fillLast(fodderR, false, false, newIndent.lineUp, currIndent.base)
 	c.column++ // )
 }
 
