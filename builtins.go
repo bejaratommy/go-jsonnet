@@ -354,7 +354,7 @@ func builtinFlatMapArray(i *interpreter, funcv, arrv value) (value, error) {
 	case *valueArray:
 		return builtinFlatMap(i, funcv, arrv)
 	default:
-		return nil, i.typeErrorSpecific(arrv, &valueArray{})
+		return nil, i.Error("In comprehension, can only iterate over array, got " + arrv.getType().name)
 	}
 }
 

@@ -269,6 +269,33 @@ func TestTLAReset(t *testing.T) {
 	}
 }
 
+func TestComprehensionIterateNonArrayErrorMessage(t *testing.T) {
+	// Comprehensions desugar to a call to the internal $flatMapArray builtin.
+	// Iterating over a non-array should produce an error that mentions the
+	// comprehension, not the desugaring implementation detail (see #340).
+	for _, tc := range []struct {
+		snippet string
+		gotType string
+	}{
+		{`[a for a in {}]`, "object"},
+		{`[a for a in 'b']`, "string"},
+		{`{ [a]: 0 for a in {} }`, "object"},
+	} {
+		vm := MakeVM()
+		_, err := vm.EvaluateAnonymousSnippet("test.jsonnet", tc.snippet)
+		if err == nil {
+			t.Fatalf("%s: expected error, got nil", tc.snippet)
+		}
+		msg := err.Error()
+		if !strings.Contains(msg, "In comprehension, can only iterate over array, got "+tc.gotType) {
+			t.Errorf("%s: unexpected error message %q", tc.snippet, msg)
+		}
+		if strings.Contains(msg, "flatMap") {
+			t.Errorf("%s: error message leaks desugaring detail: %q", tc.snippet, msg)
+		}
+	}
+}
+
 func assertVarOutput(t *testing.T, jsonStr string) {
 	var data struct {
 		Var  string `json:"var"`
