@@ -273,6 +273,7 @@ func desugarLocalBinds(binds ast.LocalBinds, objLevel int) (err error) {
 				Variable: binds[i].Variable,
 				Body:     binds[i].Fun,
 				Fun:      nil,
+				LocRange: binds[i].LocRange,
 			}
 		}
 		err = desugar(&binds[i].Body, objLevel)

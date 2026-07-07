@@ -1,0 +1,5 @@
+testdata/unused_function_shortcut:1:7-32 Unused variable: dofoo
+
+local dofoo(str) = { foo: str };
+
+
