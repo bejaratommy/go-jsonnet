@@ -399,6 +399,7 @@ func (p *parser) parseObjectRemainderField(literalFields *literalFieldSet, tok *
 	var fodder1 ast.Fodder
 	var expr1 ast.Node
 	var id *ast.Identifier
+	var idLoc ast.LocationRange
 	var fodder2 ast.Fodder
 	var err errors.StaticError
 
@@ -406,6 +407,7 @@ func (p *parser) parseObjectRemainderField(literalFields *literalFieldSet, tok *
 	case tokenIdentifier:
 		kind = ast.ObjectFieldID
 		id = (*ast.Identifier)(&next.data)
+		idLoc = next.loc
 		fodder1 = next.fodder
 	case tokenStringDouble, tokenStringSingle,
 		tokenStringBlock, tokenVerbatimStringDouble, tokenVerbatimStringSingle:
@@ -490,6 +492,7 @@ func (p *parser) parseObjectRemainderField(literalFields *literalFieldSet, tok *
 		Fodder1:     fodder1,
 		Expr1:       expr1,
 		Id:          id,
+		IdLoc:       idLoc,
 		Fodder2:     fodder2,
 		OpFodder:    opFodder,
 		Expr2:       body,

@@ -31,8 +31,12 @@ var desugaredBop = map[ast.BinaryOp]ast.Identifier{
 }
 
 func makeStr(s string) *ast.LiteralString {
+	return makeStrLoc(s, ast.LocationRange{})
+}
+
+func makeStrLoc(s string, loc ast.LocationRange) *ast.LiteralString {
 	return &ast.LiteralString{
-		NodeBase:    ast.NodeBase{},
+		NodeBase:    ast.NodeBase{LocRange: loc},
 		Value:       s,
 		Kind:        ast.StringDouble,
 		BlockIndent: "",
@@ -79,7 +83,7 @@ func desugarFields(nodeBase ast.NodeBase, fields *ast.ObjectFields, objLevel int
 		case ast.ObjectFieldID:
 			desugaredFields = append(desugaredFields, ast.DesugaredObjectField{
 				Hide:      field.Hide,
-				Name:      makeStr(string(*field.Id)),
+				Name:      makeStrLoc(string(*field.Id), field.IdLoc),
 				Body:      field.Expr2,
 				PlusSuper: field.SuperSugar,
 				LocRange:  field.LocRange,

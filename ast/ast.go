@@ -586,7 +586,11 @@ type ObjectField struct {
 	// keyword.
 	Method *Function
 	//nolint: golint,stylecheck // keeping Id instead of ID for now to avoid breaking 3rd parties
-	Id           *Identifier
+	Id *Identifier
+	// IdLoc is the location of the Id token (only set when Kind == ObjectFieldID).
+	// It lets the desugared string literal built from Id keep a location, since
+	// LocRange spans the whole field (name and value) rather than just the name.
+	IdLoc        LocationRange
 	Fodder2      Fodder
 	Fodder1      Fodder
 	OpFodder     Fodder
