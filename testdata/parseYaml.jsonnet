@@ -60,5 +60,15 @@
     |||,
 
     "---",
+
+    // A stream that begins with a comment before the first document-start
+    // marker must not yield a spurious leading null. See #660.
+    |||
+      # Test
+      ---
+      foo: bar
+      ---
+      baz: cuux
+    |||,
   ]
 ]
