@@ -100,8 +100,19 @@ func (r *YAMLReader) read() ([]byte, error) {
 		if bytes.HasPrefix(line, docStartMarker) {
 			end := len(docStartMarker)
 			if end == len(line) || line[end] == '\n' || line[end] == ' ' || line[end] == '\t' {
+				firstMarker := !r.stream
 				r.stream = true
 				if r.buffer.Len() != 0 {
+					// Content preceding the very first document-start marker is an
+					// implicit bare document. When that leading content consists
+					// only of comments and/or blank lines it is not a document, so
+					// it must be discarded rather than emitted as a spurious null.
+					// See https://github.com/google/go-jsonnet/issues/660.
+					if firstMarker && isBlankOrComment(r.buffer.Bytes()) {
+						r.buffer.Reset()
+						r.buffer.Write(line)
+						continue
+					}
 					out := append([]byte(nil), r.buffer.Bytes()...)
 					r.buffer.Reset()
 					// The document start marker should be included in the next document.
@@ -126,6 +137,19 @@ func (r *YAMLReader) read() ([]byte, error) {
 
 func (r *YAMLReader) isStream() bool {
 	return r.stream
+}
+
+// isBlankOrComment reports whether the given YAML chunk contains only blank
+// lines and comment lines, i.e. no document content.
+func isBlankOrComment(b []byte) bool {
+	for _, line := range bytes.Split(b, []byte("\n")) {
+		trimmed := bytes.TrimLeft(line, " \t\r")
+		if len(trimmed) == 0 || trimmed[0] == '#' {
+			continue
+		}
+		return false
+	}
+	return true
 }
 
 // LineReader reads single lines.
