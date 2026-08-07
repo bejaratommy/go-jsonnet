@@ -2532,6 +2532,13 @@ func builtinRemoveAt(i *interpreter, arrv value, idxv value) (value, error) {
 		return nil, err
 	}
 
+	// The reference implementation in the standard library is
+	//   [arr[i] for i in std.range(0, std.length(arr) - 1) if i != at]
+	// so an index outside the array simply removes nothing.
+	if idx < 0 || idx >= len(arr.elements) {
+		return arr, nil
+	}
+
 	newArr = append(newArr, arr.elements[:idx]...)
 	newArr = append(newArr, arr.elements[idx+1:]...)
 	return makeValueArray(newArr), nil
