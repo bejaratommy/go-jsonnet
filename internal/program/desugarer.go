@@ -269,11 +269,8 @@ func buildStdCall(builtinName ast.Identifier, loc ast.LocationRange, args ...ast
 func desugarLocalBinds(binds ast.LocalBinds, objLevel int) (err error) {
 	for i := range binds {
 		if binds[i].Fun != nil {
-			binds[i] = ast.LocalBind{
-				Variable: binds[i].Variable,
-				Body:     binds[i].Fun,
-				Fun:      nil,
-			}
+			binds[i].Body = binds[i].Fun
+			binds[i].Fun = nil
 		}
 		err = desugar(&binds[i].Body, objLevel)
 		if err != nil {

@@ -1,0 +1,2 @@
+local dofoo(str) = str;
+{}
