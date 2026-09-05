@@ -60,5 +60,16 @@
     |||,
 
     "---",
+
+    // YAML 1.1 boolean-looking keys must stay the original strings
+    // (cjsonnet / jrsonnet; https://github.com/google/go-jsonnet/issues/766).
+    |||
+      on: help
+      off: stay
+      yes: stay
+      no: stay
+      true: stay
+      false: stay
+    |||,
   ]
 ]

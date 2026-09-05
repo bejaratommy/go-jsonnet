@@ -6,7 +6,7 @@ require (
 	github.com/fatih/color v1.18.0
 	github.com/sergi/go-diff v1.3.1
 	golang.org/x/crypto v0.45.0
-	sigs.k8s.io/yaml v1.4.0
+	gopkg.in/yaml.v3 v3.0.1
 )
 
 require (

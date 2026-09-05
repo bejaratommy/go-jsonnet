@@ -54,5 +54,13 @@
    ],
    [
       null
-   ]
+   ],
+   {
+      "false": "stay",
+      "no": "stay",
+      "off": "stay",
+      "on": "help",
+      "true": "stay",
+      "yes": "stay"
+   }
 ]
