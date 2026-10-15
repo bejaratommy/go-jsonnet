@@ -19,9 +19,13 @@ package jsonnet
 import (
 	"bufio"
 	"bytes"
+	"fmt"
 	"io"
+	"math"
+	"strconv"
+	"time"
 
-	"sigs.k8s.io/yaml"
+	"gopkg.in/yaml.v3"
 )
 
 // YAMLToJSONDecoder decodes YAML documents from an io.Reader by
@@ -33,8 +37,7 @@ type YAMLToJSONDecoder struct {
 
 // NewYAMLToJSONDecoder decodes YAML documents from the provided
 // stream in chunks by converting each document (as defined by
-// the YAML spec) into its own chunk, converting it to JSON via
-// yaml.YAMLToJSON, and then passing it to json.Decoder.
+// the YAML spec) into its own chunk.
 func NewYAMLToJSONDecoder(r io.Reader) *YAMLToJSONDecoder {
 	reader := bufio.NewReader(r)
 	return &YAMLToJSONDecoder{
@@ -42,22 +45,100 @@ func NewYAMLToJSONDecoder(r io.Reader) *YAMLToJSONDecoder {
 	}
 }
 
-// Decode reads a YAML document as JSON from the stream or returns
-// an error. The decoding rules match json.Unmarshal, not
-// yaml.Unmarshal.
+// Decode reads a YAML document from the stream or returns an error.
+//
+// Mapping keys are kept as their written scalars. go-yaml 1.1 (and the
+// previous sigs.k8s.io/yaml path) resolved unquoted keys such as "on",
+// "yes", and "y" to booleans, so std.parseYaml turned `{on: help}` into
+// `{"true": "help"}`. Jsonnet objects can only have string fields, and
+// the C++ and Rust implementations keep those keys. Decoding with
+// YAML 1.2 rules (only true/false are booleans) matches them.
+// Non-string keys, such as the boolean true or an integer, are still
+// rendered with their scalar text so the result stays a JSON object.
 func (d *YAMLToJSONDecoder) Decode(into interface{}) error {
-	bytes, err := d.reader.read()
+	doc, err := d.reader.read()
 	if err != nil && err != io.EOF {
 		return err
 	}
 
-	if len(bytes) != 0 {
-		err := yaml.Unmarshal(bytes, into)
-		if err != nil {
+	if len(doc) != 0 {
+		var parsed interface{}
+		if uerr := yaml.Unmarshal(doc, &parsed); uerr != nil {
+			return uerr
+		}
+		if err := assignDecoded(into, normalizeYAML(parsed)); err != nil {
 			return err
 		}
 	}
 	return err
+}
+
+// assignDecoded stores v in *into. Decode's caller passes *interface{}.
+func assignDecoded(into interface{}, v interface{}) error {
+	target, ok := into.(*interface{})
+	if !ok {
+		return fmt.Errorf("YAML decode target must be *interface{}")
+	}
+	*target = v
+	return nil
+}
+
+// normalizeYAML turns yaml.v3's decoded tree into the types jsonToValue accepts.
+// Map keys that yaml.v3 left as bools or numbers become their decimal/literal text.
+func normalizeYAML(v interface{}) interface{} {
+	switch v := v.(type) {
+	case map[string]interface{}:
+		out := make(map[string]interface{}, len(v))
+		for k, val := range v {
+			out[k] = normalizeYAML(val)
+		}
+		return out
+	case map[interface{}]interface{}:
+		out := make(map[string]interface{}, len(v))
+		for k, val := range v {
+			out[yamlKeyString(k)] = normalizeYAML(val)
+		}
+		return out
+	case []interface{}:
+		out := make([]interface{}, len(v))
+		for i, val := range v {
+			out[i] = normalizeYAML(val)
+		}
+		return out
+	case int, int64, float64, bool, string, nil:
+		return v
+	case uint64:
+		if v > math.MaxInt64 {
+			return float64(v)
+		}
+		return int64(v)
+	case time.Time:
+		return v.UTC().Format(time.RFC3339Nano)
+	default:
+		return v
+	}
+}
+
+func yamlKeyString(k interface{}) string {
+	switch k := k.(type) {
+	case string:
+		return k
+	case bool:
+		if k {
+			return "true"
+		}
+		return "false"
+	case int:
+		return strconv.Itoa(k)
+	case int64:
+		return strconv.FormatInt(k, 10)
+	case uint64:
+		return strconv.FormatUint(k, 10)
+	case float64:
+		return strconv.FormatFloat(k, 'f', -1, 64)
+	default:
+		return fmt.Sprint(k)
+	}
 }
 
 func (d *YAMLToJSONDecoder) IsStream() bool {
