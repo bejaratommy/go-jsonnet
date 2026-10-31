@@ -8,8 +8,12 @@ Available options:
   -J / --jpath <dir>         Specify an additional library search dir
                              (right-most wins)
   -o / --output-file <file>  Write to the output file rather than stdout
-  -m / --multi <dir>         Write multiple files to the directory, list files
-                             on stdout
+  -m / --multi <dir>         Expect an object: keys name files within <dir>,
+                             values become their JSON contents
+                             List output paths on stdout (or --output-file)
+                             With --string, values must be strings and are
+                             written as plain text instead of JSON
+                             Takes precedence over --yaml-stream
   -c / --create-output-dirs  Automatically creates all parent directories for
                              files
   -y / --yaml-stream         Write output as a YAML stream of JSON documents
